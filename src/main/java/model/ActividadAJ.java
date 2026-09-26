@@ -37,4 +37,10 @@ public class ActividadAJ {
 
 	@Column(name = "nro_vacantes")
 	private int nroVacantes;
-}
+	
+	@Override
+	public String toString() {
+		return descripcion;
+	}
+
+	}

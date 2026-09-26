@@ -2,6 +2,7 @@ package gui;
 
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.time.LocalDateTime;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -20,6 +21,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import model.SolicitudAJ;
+import model.ActividadAJ;
+
 import util.JPAUtil;
 
 public class DlgSolicitud extends JDialog implements ActionListener {
@@ -257,7 +260,20 @@ public class DlgSolicitud extends JDialog implements ActionListener {
 	}
 
 	void cargarComboBoxActividad() {
+		EntityManager em = JPAUtil.getEntityManager();
 
+		TypedQuery<ActividadAJ> query = em.createQuery(
+				"SELECT a FROM ActividadAJ a", ActividadAJ.class);
+
+		List<ActividadAJ> lista = query.getResultList();
+
+		cboActividad.removeAllItems();
+
+		for (ActividadAJ a : lista) {
+			cboActividad.addItem(a);
+		}
+
+		em.close();
 	}
 
 	void listar() {
@@ -284,7 +300,33 @@ public class DlgSolicitud extends JDialog implements ActionListener {
 	}
 
 	void adicionar() {
-		
+		EntityManager em = JPAUtil.getEntityManager();
+
+		try {
+			SolicitudAJ solicitud = new SolicitudAJ();
+
+			solicitud.setArchivoAdjunto(txtArchivoAdjunto.getText());
+			solicitud.setActividad((ActividadAJ) cboActividad.getSelectedItem());
+			solicitud.setEstado(cboEstado.getSelectedItem().toString());
+			solicitud.setFechaReg(LocalDateTime.now());
+
+			em.getTransaction().begin();
+			em.persist(solicitud);
+			em.getTransaction().commit();
+
+			mensajeInfo("Solicitud registrada correctamente");
+			limpiar();
+
+		} catch (Exception e) {
+			if (em.getTransaction().isActive()) {
+				em.getTransaction().rollback();
+			}
+			mensajeError("Error al registrar solicitud");
+			e.printStackTrace();
+
+		} finally {
+			em.close();
+		}
 	}
 
 	void consultar() {
