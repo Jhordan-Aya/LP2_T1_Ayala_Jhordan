@@ -330,11 +330,81 @@ public class DlgSolicitud extends JDialog implements ActionListener {
 	}
 
 	void consultar() {
-	
+	    EntityManager em = JPAUtil.getEntityManager();
+
+	    try {
+	        int id = Integer.parseInt(txtIdSolicitud.getText());
+
+	        SolicitudAJ solicitud = em.find(SolicitudAJ.class, id);
+
+	        if (solicitud != null) {
+	            txtArchivoAdjunto.setText(solicitud.getArchivoAdjunto());
+	            cboEstado.setSelectedItem(solicitud.getEstado());
+
+	            for (int i = 0; i < cboActividad.getItemCount(); i++) {
+	            	ActividadAJ actividad = (ActividadAJ) cboActividad.getItemAt(i);
+
+	                if (actividad.getIdActividad() ==
+	                        solicitud.getActividad().getIdActividad()) {
+
+	                    cboActividad.setSelectedIndex(i);
+	                    break;
+	                }
+	            }
+
+	            txtFechaRegistro.setText(
+	                    solicitud.getFechaReg().toString()
+	            );
+
+	            habilitarOk();
+	        } else {
+	            mensajeError("Solicitud no encontrada");
+	        }
+
+	    } catch (Exception e) {
+	        mensajeError("Error al consultar solicitud");
+	        e.printStackTrace();
+
+	    } finally {
+	        em.close();
+	    }
 	}
 
 	void modificar() {
+	    EntityManager em = JPAUtil.getEntityManager();
 
+	    try {
+	        int id = Integer.parseInt(txtIdSolicitud.getText());
+
+	        SolicitudAJ solicitud = em.find(SolicitudAJ.class, id);
+
+	        if (solicitud != null) {
+	            solicitud.setArchivoAdjunto(txtArchivoAdjunto.getText());
+	            solicitud.setActividad((ActividadAJ) cboActividad.getSelectedItem());
+	            solicitud.setEstado(cboEstado.getSelectedItem().toString());
+
+	            em.getTransaction().begin();
+	            em.merge(solicitud);
+	            em.getTransaction().commit();
+
+	            mensajeInfo("Solicitud modificada correctamente");
+	            limpiar();
+
+	        } else {
+	            mensajeError("Solicitud no encontrada");
+	        }
+
+	    } catch (Exception e) {
+	        if (em.getTransaction().isActive()) {
+	            em.getTransaction().rollback();
+	        }
+
+	        mensajeError("Error al modificar solicitud");
+	        e.printStackTrace();
+
+	    } finally {
+	        em.close();
+	    }
 	}
 
 	void eliminar() {
